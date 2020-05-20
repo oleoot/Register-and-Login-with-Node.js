@@ -31,25 +31,25 @@ app.use(session({
 app.use(passport.initialize())
 app.use(passport.session())
 
-app.get('/', (req, res) => {
-    res.render('index.ejs')
+app.get('/', checkAuth, (req, res) => {
+    res.render('index.ejs', { name: req.user.name })
 })
-app.get('/login', (req, res) => {
+app.get('/login', checkNotAuth, (req, res) => {
     res.render('login.ejs')
 })
 
-app.get('/register', (req, res) => {
+app.get('/register', checkNotAuth, (req, res) => {
     res.render('register.ejs')
 })
 
-app.post('/login', passport.authenticate('local', {
+app.post('/login', checkNotAuth, passport.authenticate('local', {
     successRedirect: '/',
     failureRedirect: '/login',
     failureFlash: true
 }))
 
 
-app.post('/register', async (req, res) => {
+app.post('/register', checkNotAuth, async (req, res) => {
     try {
         const hashedPassword = await bcrypt.hash(req.body.password, 10);
         users.push({
@@ -65,9 +65,19 @@ app.post('/register', async (req, res) => {
     console.log(users)
 })
 
+function checkAuth(req, res, next) {
+    if (req.isAuthenticated()) {
+        return next()
+    }
+    res.redirect('/login')
+}
 
-
-
+function checkNotAuth(req, res, next) {
+    if (req.isAuthenticated()) {
+        return res.redirect('/')
+    }
+    next()
+}
 
 
 
